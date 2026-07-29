@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment: { POSTGRES_DB: "${POSTGRES_DB:-approval_hub}", POSTGRES_USER: "${POSTGRES_USER:-approval}", POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-approval}" }
+    ports: ["${POSTGRES_PORT:-5432}:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"], interval: 5s, timeout: 3s, retries: 15 }
+  approval-service:
+    build: ./approval-service
+    environment: { DATABASE_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB:-approval_hub}", DATABASE_USER: "${POSTGRES_USER:-approval}", DATABASE_PASSWORD: "${POSTGRES_PASSWORD:-approval}", CORS_ORIGIN: "http://localhost:3000" }
+    ports: ["${SPRING_PORT:-8080}:8080"]
+    depends_on: { postgres: { condition: service_healthy } }
+    healthcheck: { test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"], interval: 10s, timeout: 4s, retries: 12, start_period: 25s }
+  api-gateway:
+    build: ./api-gateway
+    environment: { APPROVAL_SERVICE_URL: "http://approval-service:8080", CORS_ORIGIN: "${CORS_ORIGIN:-http://localhost:4200}", PUBLIC_GATEWAY_URL: "${PUBLIC_GATEWAY_URL:-http://localhost:3000}", POWER_AUTOMATE_WEBHOOK_URL: "${POWER_AUTOMATE_WEBHOOK_URL:-}", POWER_APPS_DEMO_KEY: "${POWER_APPS_DEMO_KEY:-}", HTTP_TIMEOUT_MS: "${HTTP_TIMEOUT_MS:-5000}" }
+    ports: ["${GATEWAY_PORT:-3000}:3000"]
+    depends_on: { approval-service: { condition: service_healthy } }
+    healthcheck: { test: ["CMD-SHELL", "wget -qO- http://localhost:3000/api/health || exit 1"], interval: 10s, timeout: 4s, retries: 10 }
+  frontend:
+    build: ./frontend
+    environment: { POWER_APPS_DEMO_KEY: "${POWER_APPS_DEMO_KEY:-}", NGINX_ENVSUBST_FILTER: "POWER_APPS_DEMO_KEY" }
+    ports: ["${FRONTEND_PORT:-4200}:80"]
+    depends_on: { api-gateway: { condition: service_healthy } }
+    healthcheck: { test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ | grep -q 'polyfills-'"], interval: 10s, timeout: 4s, retries: 10 }
+volumes: { postgres_data: {} }

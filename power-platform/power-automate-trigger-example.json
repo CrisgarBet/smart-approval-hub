@@ -1,0 +1,9 @@
+{
+  "requestId": "11111111-1111-1111-1111-111111111111",
+  "requesterName": "Ana Gómez",
+  "requesterEmail": "ana@empresa.com",
+  "concept": "Portátiles",
+  "amount": 2500000,
+  "costCenter": "TI",
+  "callbackUrl": "https://api.example.com/api/integrations/power-automate/approval-callback"
+}

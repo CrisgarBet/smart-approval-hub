@@ -1,0 +1,2 @@
+import { Module } from '@nestjs/common'; import { HttpModule } from '@nestjs/axios'; import { PurchaseRequestsModule } from './requests/purchase-requests.module'; import { PowerAutomateModule } from './power-automate/power-automate.module'; import { HealthModule } from './health/health.module'; import { PowerAppsModule } from './power-apps/power-apps.module';
+@Module({imports:[HttpModule.register({timeout:Number(process.env.HTTP_TIMEOUT_MS??5000),maxRedirects:0}),PurchaseRequestsModule,PowerAutomateModule,HealthModule,PowerAppsModule]}) export class AppModule{}

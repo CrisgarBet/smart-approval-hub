@@ -1,0 +1,44 @@
+swagger: '2.0'
+info:
+  title: Smart Approval Hub Demo
+  description: API dedicada para una Canvas App de demostración.
+  version: 1.0.0
+host: POWER_APPS_PUBLIC_HOST
+basePath: /api/powerapps
+schemes: [https]
+consumes: [application/json]
+produces: [application/json]
+securityDefinitions:
+  api_key: {type: apiKey, in: header, name: x-api-key}
+security: [{api_key: []}]
+paths:
+  /health:
+    get: {operationId: PowerAppsHealth, summary: Comprobar integración, description: Comprueba gateway y dominio., x-ms-summary: Estado de integración, x-ms-visibility: important, security: [], responses: {'200': {description: Estado actual, schema: {$ref: '#/definitions/IntegrationHealth'}}}}
+  /requests:
+    get:
+      operationId: ListRequests
+      summary: Listar solicitudes
+      description: Devuelve items y total.
+      x-ms-summary: Listar solicitudes
+      x-ms-visibility: important
+      parameters: [{name: status, in: query, required: false, type: string, enum: [PENDIENTE, APROBADA, RECHAZADA]}, {name: search, in: query, required: false, type: string}]
+      responses: {'200': {description: Colección, schema: {$ref: '#/definitions/PurchaseRequestList'}}}
+    post: {operationId: CreateRequest, summary: Crear solicitud, description: Crea y evalúa una solicitud., x-ms-summary: Crear solicitud, x-ms-visibility: important, parameters: [{name: body, in: body, required: true, schema: {$ref: '#/definitions/CreateRequest'}}], responses: {'201': {description: Creada, schema: {$ref: '#/definitions/PurchaseRequest'}}}}
+  /requests/{id}:
+    get: {operationId: GetRequest, summary: Obtener solicitud, description: Obtiene una solicitud., x-ms-summary: Obtener solicitud, x-ms-visibility: important, parameters: [{$ref: '#/parameters/RequestId'}], responses: {'200': {description: Encontrada, schema: {$ref: '#/definitions/PurchaseRequest'}}}}
+  /requests/{id}/approve:
+    patch: {operationId: ApproveRequest, summary: Aprobar solicitud, description: Aprueba una pendiente., x-ms-summary: Aprobar solicitud, x-ms-visibility: important, parameters: [{$ref: '#/parameters/RequestId'}, {name: body, in: body, required: false, schema: {$ref: '#/definitions/ApproveRequest'}}], responses: {'200': {description: Aprobada, schema: {$ref: '#/definitions/PurchaseRequest'}}}}
+  /requests/{id}/reject:
+    patch: {operationId: RejectRequest, summary: Rechazar solicitud, description: Rechaza con comentario., x-ms-summary: Rechazar solicitud, x-ms-visibility: important, parameters: [{$ref: '#/parameters/RequestId'}, {name: body, in: body, required: true, schema: {$ref: '#/definitions/RejectRequest'}}], responses: {'200': {description: Rechazada, schema: {$ref: '#/definitions/PurchaseRequest'}}}}
+  /metrics:
+    get: {operationId: GetMetrics, summary: Obtener métricas, description: Devuelve métricas agregadas., x-ms-summary: Consultar métricas, x-ms-visibility: important, responses: {'200': {description: Métricas, schema: {$ref: '#/definitions/Metrics'}}}}
+parameters:
+  RequestId: {name: id, in: path, required: true, type: string, format: uuid}
+definitions:
+  IntegrationHealth: {type: object, properties: {status: {type: string}, apiGateway: {type: boolean}, domainService: {type: boolean}, customConnector: {type: string}, powerAutomate: {type: string}, endpoint: {type: string}}}
+  CreateRequest: {type: object, required: [requesterName, requesterEmail, concept, description, amount, costCenter], properties: {requesterName: {type: string}, requesterEmail: {type: string, format: email}, concept: {type: string}, description: {type: string}, amount: {type: number, format: double, minimum: 0.01}, costCenter: {type: string}}}
+  ApproveRequest: {type: object, properties: {comment: {type: string}}}
+  RejectRequest: {type: object, required: [rejectionComment], properties: {rejectionComment: {type: string}}}
+  PurchaseRequest: {allOf: [{$ref: '#/definitions/CreateRequest'}, {type: object, properties: {id: {type: string, format: uuid}, status: {type: string, enum: [PENDIENTE, APROBADA, RECHAZADA]}, decisionComment: {type: string, x-nullable: true}, createdAt: {type: string, format: date-time}, updatedAt: {type: string, format: date-time}}}]}
+  PurchaseRequestList: {type: object, properties: {items: {type: array, items: {$ref: '#/definitions/PurchaseRequest'}}, total: {type: integer}}}
+  Metrics: {type: object, properties: {total: {type: integer}, pending: {type: integer}, approved: {type: integer}, rejected: {type: integer}, totalAmount: {type: number}}}

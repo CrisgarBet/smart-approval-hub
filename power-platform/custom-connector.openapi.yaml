@@ -1,0 +1,70 @@
+swagger: '2.0'
+info: { title: Smart Approval Hub, description: Conector para administrar solicitudes de compra, version: '1.0' }
+host: localhost:3000
+basePath: /api
+schemes: [http]
+consumes: [application/json]
+produces: [application/json]
+paths:
+  /requests:
+    get:
+      operationId: ListRequests
+      summary: Listar solicitudes
+      description: Consulta solicitudes con filtros opcionales.
+      x-ms-summary: Listar solicitudes
+      parameters:
+        - { name: status, in: query, required: false, type: string, enum: [PENDIENTE, APROBADA, RECHAZADA], x-ms-summary: Estado }
+        - { name: search, in: query, required: false, type: string, x-ms-summary: Búsqueda }
+      responses: { '200': { description: Lista obtenida, schema: { type: array, items: { $ref: '#/definitions/PurchaseRequest' } } } }
+    post:
+      operationId: CreateRequest
+      summary: Crear solicitud
+      description: Crea una solicitud y aplica aprobación automática.
+      x-ms-summary: Crear solicitud
+      parameters: [{ name: body, in: body, required: true, schema: { $ref: '#/definitions/CreateRequest' } }]
+      responses: { '201': { description: Solicitud creada, schema: { $ref: '#/definitions/PurchaseRequest' } }, '400': { description: Datos inválidos } }
+  /requests/metrics:
+    get:
+      operationId: GetMetrics
+      summary: Consultar métricas
+      description: Obtiene conteos y monto acumulado.
+      x-ms-summary: Consultar métricas
+      responses: { '200': { description: Métricas obtenidas, schema: { $ref: '#/definitions/Metrics' } } }
+  /requests/{id}:
+    get:
+      operationId: GetRequest
+      summary: Obtener solicitud
+      description: Consulta el detalle por identificador.
+      x-ms-summary: Obtener solicitud
+      parameters: [{ name: id, in: path, required: true, type: string, format: uuid, x-ms-summary: Identificador }]
+      responses: { '200': { description: Solicitud encontrada, schema: { $ref: '#/definitions/PurchaseRequest' } }, '404': { description: No encontrada } }
+  /requests/{id}/approve:
+    patch:
+      operationId: ApproveRequest
+      summary: Aprobar solicitud
+      description: Aprueba una solicitud pendiente.
+      x-ms-summary: Aprobar solicitud
+      parameters: [{ name: id, in: path, required: true, type: string, format: uuid }, { name: body, in: body, required: false, schema: { $ref: '#/definitions/Decision' } }]
+      responses: { '200': { description: Solicitud aprobada, schema: { $ref: '#/definitions/PurchaseRequest' } }, '409': { description: Ya decidida } }
+  /requests/{id}/reject:
+    patch:
+      operationId: RejectRequest
+      summary: Rechazar solicitud
+      description: Rechaza una solicitud pendiente y exige comentario.
+      x-ms-summary: Rechazar solicitud
+      parameters: [{ name: id, in: path, required: true, type: string, format: uuid }, { name: body, in: body, required: true, schema: { $ref: '#/definitions/Decision' } }]
+      responses: { '200': { description: Solicitud rechazada, schema: { $ref: '#/definitions/PurchaseRequest' } }, '400': { description: Comentario requerido }, '409': { description: Ya decidida } }
+definitions:
+  CreateRequest:
+    type: object
+    required: [requesterName, requesterEmail, concept, description, amount, costCenter]
+    properties: { requesterName: { type: string }, requesterEmail: { type: string, format: email }, concept: { type: string }, description: { type: string }, amount: { type: number, format: double, minimum: 0.01 }, costCenter: { type: string } }
+  Decision: { type: object, properties: { comment: { type: string } } }
+  PurchaseRequest:
+    allOf:
+      - { $ref: '#/definitions/CreateRequest' }
+      - type: object
+        properties: { id: { type: string, format: uuid }, status: { type: string, enum: [PENDIENTE, APROBADA, RECHAZADA] }, decisionComment: { type: string, x-nullable: true }, createdAt: { type: string, format: date-time }, updatedAt: { type: string, format: date-time } }
+  Metrics:
+    type: object
+    properties: { total: { type: integer, format: int64 }, pending: { type: integer, format: int64 }, approved: { type: integer, format: int64 }, rejected: { type: integer, format: int64 }, totalAmount: { type: number, format: double } }

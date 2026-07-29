@@ -1,0 +1,6 @@
+{
+  "requestId": "11111111-1111-1111-1111-111111111111",
+  "decision": "REJECTED",
+  "comment": "No hay presupuesto disponible",
+  "approvedBy": "aprobador@empresa.com"
+}

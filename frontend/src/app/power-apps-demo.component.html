@@ -1,0 +1,41 @@
+<a routerLink="/">← Volver al dashboard</a>
+<section class="pa-hero">
+  <div><p class="eyebrow">POWER PLATFORM · DEMOSTRACIÓN LOCAL</p><h1>Simulador local de integración con Power Apps</h1><p>Una experiencia tipo Canvas App conectada al dominio real de compras.</p></div><span class="sim-chip">SIMULADOR LOCAL</span>
+</section>
+<div class="disclaimer"><b>Esta pantalla no es Microsoft Power Apps.</b> Es un simulador local que consume los mismos endpoints y contratos usados por el Custom Connector.</div>
+@if(error()){<div class="pa-alert error"><span>{{error()}}</span><button class="button" (click)="refresh()">Reintentar</button></div>}@if(message()){<div class="pa-alert success-note">✓ {{message()}}</div>}
+
+<section class="pa-section"><div class="section-title"><div><small>01</small><h2>Estado de integración</h2></div><code>{{connector.endpoint}}</code></div>
+  <div class="status-grid">
+    <article><i [class.ok]="health()?.apiGateway"></i><span>API Gateway</span><b>{{health()?.apiGateway?'Disponible':'No disponible'}}</b></article>
+    <article><i [class.ok]="health()?.domainService"></i><span>Servicio de dominio</span><b>{{health()?.domainService?'Disponible':'No disponible'}}</b></article>
+    <article><i class="ok"></i><span>Custom Connector</span><b>{{health()?.customConnector??'PREPARADO'}}</b></article>
+    <article><i [class.simulated]="health()?.powerAutomate==='SIMULADO'" [class.ok]="health()?.powerAutomate==='CONFIGURADO'"></i><span>Power Automate</span><b>{{health()?.powerAutomate??'SIMULADO'}}</b></article>
+  </div>
+</section>
+
+<section class="pa-section"><div class="section-title"><div><small>02</small><h2>Métricas reales</h2></div></div><div class="pa-metrics"><article><span>Total</span><b>{{metrics().total}}</b></article><article><span>Pendientes</span><b class="amber">{{metrics().pending}}</b></article><article><span>Aprobadas</span><b class="green">{{metrics().approved}}</b></article><article><span>Rechazadas</span><b class="red">{{metrics().rejected}}</b></article><article><span>Monto</span><b>{{metrics().totalAmount|currency:'COP':'symbol-narrow':'1.0-0'}}</b></article></div></section>
+
+<div class="pa-columns">
+<section class="pa-section"><div class="section-title"><div><small>03</small><h2>Solicitudes</h2></div><button class="icon-button" (click)="refresh()">↻ Refrescar</button></div>
+  <div class="pa-filters"><input aria-label="Buscar Power Apps" [(ngModel)]="search" (keyup.enter)="refresh()" placeholder="Buscar"><select aria-label="Estado Power Apps" [(ngModel)]="status" (change)="refresh()"><option value="">Todos</option><option>PENDIENTE</option><option>APROBADA</option><option>RECHAZADA</option></select></div>
+  @if(loading()){<div class="compact-state">Conectando con ListRequests…</div>}@else if(!items().length){<div class="compact-state">No hay solicitudes para mostrar.</div>}@else{<div class="canvas-list">@for(r of items();track r.id){<button (click)="view(r.id)"><div><b>{{r.concept}}</b><span>{{r.requesterName}} · {{r.costCenter}}</span></div><div><strong>{{r.amount|currency:'COP':'symbol-narrow':'1.0-0'}}</strong><app-status-badge [status]="r.status"/></div></button>}</div>}
+</section>
+<section class="pa-section"><div class="section-title"><div><small>04</small><h2>Nueva solicitud</h2></div><code>CreateRequest</code></div>
+  <form [formGroup]="form" (ngSubmit)="create()" class="canvas-form"><label>Solicitante<input formControlName="requesterName" placeholder="Nombre completo"></label><label>Correo<input formControlName="requesterEmail" type="email" placeholder="correo@empresa.com"></label><label>Concepto<input formControlName="concept" placeholder="Equipo de desarrollo"></label><label>Descripción<textarea formControlName="description" rows="2"></textarea></label><div class="form-row"><label>Monto<input formControlName="amount" type="number"></label><label>Centro de costos<input formControlName="costCenter"></label></div><p>≤ $1.000.000: aprobación automática · &gt; $1.000.000: pendiente</p><button class="button primary" [disabled]="saving()">{{saving()?'Enviando…':'Crear con Custom Connector simulado'}}</button></form>
+</section></div>
+
+<section class="pa-section"><div class="section-title"><div><small>05</small><h2>Detalle y decisión</h2></div><code>GetRequest · ApproveRequest · RejectRequest</code></div>
+@if(selected();as r){<div class="selected-card"><div><span>Solicitud seleccionada</span><h3>{{r.concept}}</h3><p>{{r.requesterName}} · {{r.requesterEmail}}</p><p>{{r.description}}</p></div><div><b>{{r.amount|currency:'COP':'symbol-narrow':'1.0-0'}}</b><app-status-badge [status]="r.status"/></div></div>
+  @if(r.status==='PENDIENTE'){<div class="decision-row"><button class="button success" (click)="approve()" [disabled]="saving()">Aprobar</button><input [(ngModel)]="rejectionComment" placeholder="Comentario obligatorio para rechazar"><button class="button danger" (click)="reject()" [disabled]="saving()">Rechazar</button></div>}@else{<div class="final-decision"><span>Decisión final: {{r.status}}</span>@if(r.decisionComment){<i>{{r.decisionComment}}</i>}<button class="button" (click)="demonstrateConflict()">Demostrar protección 409</button></div>}
+}@else{<div class="compact-state">Selecciona una solicitud del listado.</div>}</section>
+
+<section class="pa-section monitor"><div class="section-title"><div><small>06</small><h2>Monitor de llamadas REST</h2></div><button class="icon-button" (click)="connector.clearMonitor()">Limpiar</button></div><p class="section-copy">Cada fila equivale a una operación que Power Fx invocará por medio del Custom Connector.</p>
+@if(!connector.logs().length){<div class="compact-state">Ejecuta una operación para observar el contrato.</div>}@else{<div class="monitor-list">@for(log of connector.logs();track log.id){<button [class.selected]="activeLog()?.id===log.id" [class.failed]="!log.success" (click)="selectLog(log)"><time>{{log.time}}</time><b>{{log.operationId}}</b><code>{{log.method}} {{log.endpoint}}</code><span>{{log.status}}</span><span>{{log.durationMs}} ms</span><em>{{log.success?'EXITOSA':'FALLIDA'}}</em></button>}</div>@if(activeLog();as log){<div class="log-detail"><div><b>Request sanitizado</b><pre>{{log.requestBody|json}}</pre></div><div><b>Respuesta resumida</b><pre>{{log.response}}</pre></div></div>}}
+</section>
+
+<section class="pa-section"><div class="section-title"><div><small>07</small><h2>Arquitectura de la operación</h2></div><span>{{activeLog()?.operationId??'Selecciona una llamada'}}</span></div><div class="architecture"><div [class.active]="activeLog()"><b>▣</b><span>Power Apps<br><small>Canvas App simulada</small></span></div><i>→</i><div [class.active]="activeLog()"><b>⌁</b><span>Custom Connector<br><small>Swagger 2.0</small></span></div><i>→</i><div [class.active]="activeLog()"><b>N</b><span>NestJS<br><small>/api/powerapps</small></span></div><i>→</i><div [class.active]="activeLog()"><b>S</b><span>Spring Boot<br><small>Reglas de dominio</small></span></div><i>→</i><div [class.active]="activeLog()"><b>DB</b><span>PostgreSQL<br><small>Persistencia</small></span></div></div>
+  <div class="alternate-flow"><span>NestJS</span><i>→ webhook →</i><span>Power Automate <b>{{health()?.powerAutomate??'SIMULADO'}}</b></span><i>→ callback →</i><span>NestJS</span></div>
+</section>
+
+<section class="pa-section"><div class="section-title"><div><small>08</small><h2>Flujo de aprobación</h2></div><span class="sim-chip">{{health()?.powerAutomate??'SIMULADO'}}</span></div><div class="flow-steps">@for(step of ['Solicitud creada','Regla evaluada','Solicitud pendiente','Webhook preparado','Aprobación simulada o real','Callback recibido','Estado actualizado'];track step;let i=$index){<div><b>{{i+1}}</b><span>{{step}}</span></div>}</div><p class="section-copy">“Simulado” significa que no hay `POWER_AUTOMATE_WEBHOOK_URL`. Sólo se mostrará “Configurado” cuando el gateway detecte esa variable; “ejecutado realmente” requiere evidencia del flujo en Microsoft.</p></section>

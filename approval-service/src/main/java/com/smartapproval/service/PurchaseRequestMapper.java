@@ -1,0 +1,2 @@
+package com.smartapproval.service; import com.smartapproval.domain.PurchaseRequest; import com.smartapproval.dto.PurchaseRequestResponse;
+public final class PurchaseRequestMapper { private PurchaseRequestMapper(){} public static PurchaseRequestResponse toResponse(PurchaseRequest p){return new PurchaseRequestResponse(p.getId(),p.getRequesterName(),p.getRequesterEmail(),p.getConcept(),p.getDescription(),p.getAmount(),p.getCostCenter(),p.getStatus(),p.getDecisionComment(),p.getCreatedAt(),p.getUpdatedAt());} }

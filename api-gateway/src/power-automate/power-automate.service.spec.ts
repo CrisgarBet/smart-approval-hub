@@ -1,0 +1,1 @@
+import { PowerAutomateService } from './power-automate.service';describe('PowerAutomateService',()=>{it('no llama HTTP sin webhook',()=>{delete process.env.POWER_AUTOMATE_WEBHOOK_URL;const http={post:jest.fn()} as any;new PowerAutomateService(http).notify({id:'1'});expect(http.post).not.toHaveBeenCalled();});});

@@ -1,0 +1,1 @@
+import { Component,input } from '@angular/core';import { RequestStatus } from './models';@Component({selector:'app-status-badge',standalone:true,template:`<span class="badge" [class]="'badge '+status().toLowerCase()">{{status()}}</span>`})export class StatusBadgeComponent{status=input.required<RequestStatus>();}

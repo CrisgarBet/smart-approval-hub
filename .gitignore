@@ -1,0 +1,35 @@
+# Dependencies and build output
+node_modules/
+dist/
+target/
+coverage/
+.angular/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.jks
+*.keystore
+
+# Local data and generated artifacts
+*.db
+*.sqlite
+*.sqlite3
+frontend/artifacts/
+power-platform/generated/
+.tools/
+
+# Editor, OS and runtime files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
+
+# Local extension state
+.github/modernize/

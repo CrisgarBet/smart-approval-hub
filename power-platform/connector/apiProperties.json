@@ -1,0 +1,1 @@
+{"properties":{"connectionParameters":{"api_key":{"type":"securestring","uiDefinition":{"displayName":"API key de demostración","description":"Valor de POWER_APPS_DEMO_KEY","tooltip":"No compartas esta clave.","constraints":{"tabIndex":2,"clearText":false,"required":"true"}}}},"iconBrandColor":"#2563EB","capabilities":[],"policyTemplateInstances":[]}}

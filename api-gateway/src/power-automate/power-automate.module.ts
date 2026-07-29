@@ -1,0 +1,1 @@
+import { Module,forwardRef } from '@nestjs/common';import { HttpModule } from '@nestjs/axios';import { PowerAutomateService } from './power-automate.service';@Module({imports:[HttpModule],providers:[PowerAutomateService],exports:[PowerAutomateService]})export class PowerAutomateModule{}
